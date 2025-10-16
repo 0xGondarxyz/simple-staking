@@ -31,8 +31,8 @@ contract SimpleStakingTest is Test {
         rewardToken.transfer(address(staking), 100000 * 10 ** 18);
 
         // Give users some ETH for staking
-        vm.deal(user1, 10 ether);
-        vm.deal(user2, 10 ether);
+        vm.deal(user1, 100 ether);
+        vm.deal(user2, 100 ether);
     }
 
     function test_Deployment() public view {
@@ -56,5 +56,66 @@ contract SimpleStakingTest is Test {
         uint256 timeStaked = 365 days;
         uint256 expectedRewards = 10 ether;
         assertEq(staking.calculateRewards(stakedAmount, timeStaked), expectedRewards);
+    }
+
+    function test_stake() public {
+        vm.startPrank(user1);
+        staking.stake{value: 1 ether}();
+
+        // Destructure the struct into variables
+        (uint256 stakedAmount, uint256 rewardsEarned, uint256 lastUpdateTime) = staking.stakes(user1);
+
+        assertEq(stakedAmount, 1 ether);
+        assertEq(staking.totalStaked(), 1 ether);
+        assertEq(rewardsEarned, 0);
+        assertEq(lastUpdateTime, block.timestamp);
+        //check the contract balance
+        assertEq(address(staking).balance, 1 ether);
+        vm.stopPrank();
+    }
+
+    function test_stake_and_unstake() public {
+        vm.startPrank(user1);
+        staking.stake{value: 1 ether}();
+        (uint256 stakedAmount, uint256 rewardsEarned, uint256 lastUpdateTime) = staking.stakes(user1);
+
+        assertEq(stakedAmount, 1 ether);
+        assertEq(staking.totalStaked(), 1 ether);
+        //10 days pass
+        vm.warp(block.timestamp + 10 days);
+        staking.unstake();
+        (uint256 stakedAmountAfterUnstake,,) = staking.stakes(user1);
+        assertEq(stakedAmountAfterUnstake, 0);
+        assertEq(staking.totalStaked(), 0);
+        vm.stopPrank();
+    }
+
+    function test_stake_and_withdraw() public {
+        vm.startPrank(user1);
+        staking.stake{value: 10 ether}();
+        (uint256 stakedAmount, uint256 rewardsEarned, uint256 lastUpdateTime) = staking.stakes(user1);
+
+        assertEq(stakedAmount, 10 ether);
+        assertEq(staking.totalStaked(), 10 ether);
+        //10 days pass
+        vm.warp(block.timestamp + 10 days);
+        staking.withdrawETH(5 ether);
+        (uint256 stakedAmountAfterWithdraw,,) = staking.stakes(user1);
+        assertEq(stakedAmountAfterWithdraw, 5 ether);
+        assertEq(staking.totalStaked(), 5 ether);
+        vm.stopPrank();
+    }
+
+    function test_stake_and_claim() public {
+        vm.startPrank(user1);
+        //stake 10 ether, wait 1 year, claim rewards
+        staking.stake{value: 10 ether}();
+        vm.warp(block.timestamp + 365 days);
+        //the reward should be 10% of 10 ether
+        //get user balance of reward token
+        uint256 rewardsEarned = staking.pendingRewards(user1);
+        staking.claimRewards();
+        assertEq(rewardsEarned, 1 ether);
+        vm.stopPrank();
     }
 }

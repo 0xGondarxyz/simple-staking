@@ -120,10 +120,10 @@ contract SimpleStaking is Ownable2Step, ReentrancyGuard, Pausable {
     }
 
     function claimRewards() public whenNotPaused nonReentrant {
-        require(stakes[msg.sender].rewardsEarned > 0, "No rewards to claim");
-
         // CHECKPOINT: Update rewards with OLD staked amount before changing it
         _updateRewards(msg.sender);
+
+        require(stakes[msg.sender].rewardsEarned > 0, "No rewards to claim");
 
         // Update user's stake
         uint256 rewards = stakes[msg.sender].rewardsEarned;
