@@ -118,4 +118,32 @@ contract SimpleStakingTest is Test {
         assertEq(rewardsEarned, 1 ether);
         vm.stopPrank();
     }
+
+    function test_user_cantLeaveLessThanMinStake() public {
+        vm.startPrank(user1);
+        staking.stake{value: 1 ether}();
+        vm.warp(block.timestamp + 10 days);
+        vm.expectRevert("Less than minimum stake");
+        staking.withdrawETH(0.999 ether);
+        vm.stopPrank();
+    }
+
+    function test_user_cantClaimMoreThanRewards() public {
+        vm.startPrank(user1);
+        staking.stake{value: 1 ether}();
+        vm.warp(block.timestamp + 10 days);
+        //this one passes fine
+        staking.claimRewards();
+        //this one fails
+        vm.expectRevert("No rewards to claim");
+        staking.claimRewards();
+        vm.stopPrank();
+    }
+
+    function test_user_cantStakeZeroETH() public {
+        vm.startPrank(user1);
+        vm.expectRevert("Stake amount must be greater than 0");
+        staking.stake{value: 0}();
+        vm.stopPrank();
+    }
 }

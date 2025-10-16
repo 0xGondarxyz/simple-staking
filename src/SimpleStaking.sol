@@ -108,6 +108,8 @@ contract SimpleStaking is Ownable2Step, ReentrancyGuard, Pausable {
 
         // Update user's stake
         stakes[msg.sender].stakedAmount -= amount;
+        require(stakes[msg.sender].stakedAmount >= MIN_STAKE, "Less than minimum stake");
+
         totalStaked -= amount;
 
         // Transfer staked ETH to user with low level call method
