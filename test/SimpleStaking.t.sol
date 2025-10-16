@@ -49,4 +49,12 @@ contract SimpleStakingTest is Test {
         assertEq(address(staking).balance, 1 ether);
         vm.stopPrank();
     }
+
+    //test calculateRewards
+    function test_CalculateRewards() public view {
+        uint256 stakedAmount = 100 ether;
+        uint256 timeStaked = 365 days;
+        uint256 expectedRewards = 10 ether;
+        assertEq(staking.calculateRewards(stakedAmount, timeStaked), expectedRewards);
+    }
 }
